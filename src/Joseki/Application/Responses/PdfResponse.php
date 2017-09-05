@@ -432,7 +432,8 @@ class PdfResponse extends Nette\Object implements Nette\Application\IResponse
                 $margins["bottom"], // float $margin_bottom
                 $margins["header"], // float $margin_header
                 $margins["footer"], // float $margin_footer
-                $this->pageOrientation
+                $this->pageOrientation,
+                'tempDir' => 'temp'
             );
 
             $this->mPDF = $mpdf;
