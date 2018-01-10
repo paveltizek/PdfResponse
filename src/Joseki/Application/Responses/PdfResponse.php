@@ -2,7 +2,7 @@
 
 namespace Joseki\Application\Responses;
 
-use mPDF;
+use Mpdf\Mpdf;
 use Nette;
 use Nette\Bridges\ApplicationLatte\Template;
 use Nette\FileNotFoundException;
@@ -20,6 +20,7 @@ use Symfony\Component\DomCrawler\Crawler;
  * @author     Jan Kuchař
  * @author     Tomáš Votruba
  * @author     Miroslav Paulík
+ * @author     Štěpán Škorpil
  * @copyright  Copyright (c) 2010 Jan Kuchař (http://mujserver.net)
  * @license    LGPL
  * @link       http://addons.nette.org/cs/pdfresponse2
@@ -37,8 +38,10 @@ use Symfony\Component\DomCrawler\Crawler;
  * @property bool $ignoreStylesInHTMLDocument
  * @method onBeforeComplete($mpdf) @internal
  */
-class PdfResponse extends Nette\Object implements Nette\Application\IResponse
+class PdfResponse implements Nette\Application\IResponse
 {
+    use Nette\SmartObject;
+
     /** possible save modes */
     const INLINE = "I";
 
@@ -106,7 +109,7 @@ class PdfResponse extends Nette\Object implements Nette\Application\IResponse
     /** @var string margins: top, right, bottom, left, header, footer */
     private $pageMargins = "16,15,16,15,9,9";
 
-    /** @var mPDF */
+    /** @var Mpdf */
     private $mPDF = null;
 
     /** @var  mPDF */
@@ -413,28 +416,40 @@ class PdfResponse extends Nette\Object implements Nette\Application\IResponse
 
 
     /**
+     * @return array
+     */
+    protected function getMPDFConfig()
+    {
+        $margins = $this->getMargins();
+        return [
+            'mode' => 'utf-8',
+            'format' => $this->pageFormat,
+            'margin_left' => $margins["left"],
+            'margin_right' => $margins["right"],
+            'margin_top' => $margins["top"],
+            'margin_bottom' => $margins["bottom"],
+            'margin_header' => $margins["header"],
+            'margin_footer' => $margins["footer"],
+            'orientation' => $this->pageOrientation,
+            'tempDir' => 'temp'
+        ];
+    }
+
+
+
+    /**
      * @throws InvalidStateException
-     * @return mPDF
+     * @return Mpdf
      */
     public function getMPDF()
     {
-        if (!$this->mPDF instanceof mPDF) {
-            $margins = $this->getMargins();
 
-            $mpdf = new mPDF(
-                'utf-8', // string $codepage
-                $this->pageFormat, // mixed $format
-                '', // float $default_font_size
-                '', // string $default_font
-                $margins["left"], // float $margin_left
-                $margins["right"], // float $margin_right
-                $margins["top"], // float $margin_top
-                $margins["bottom"], // float $margin_bottom
-                $margins["header"], // float $margin_header
-                $margins["footer"], // float $margin_footer
-                $this->pageOrientation,
-                'tempDir' => 'temp'
-            );
+        if (!$this->mPDF instanceof Mpdf) {
+
+            $mpdf = new Mpdf($this->getMPDFConfig());
+
+            $mpdf->showImageErrors = true;
+
 
             $this->mPDF = $mpdf;
         }
@@ -511,7 +526,6 @@ class PdfResponse extends Nette\Object implements Nette\Application\IResponse
         $mpdf->SetAuthor($this->documentAuthor);
         $mpdf->SetTitle($this->documentTitle);
         $mpdf->SetDisplayMode($this->displayZoom, $this->displayLayout);
-        $mpdf->showImageErrors = true;
 
         // Add styles
         if (!empty($this->styles)) {
@@ -578,8 +592,15 @@ class PdfResponse extends Nette\Object implements Nette\Application\IResponse
     public function save($dir, $filename = null)
     {
         $content = $this->__toString();
-        $filename = Strings::webalize($filename ?: $this->documentTitle) . ".pdf";
+        $filename = Strings::lower($filename ?: $this->documentTitle);
 
+        if (Strings::endsWith($filename, ".pdf")) {
+            $filename = substr($filename, 0, -4);
+        }
+
+        $filename = Strings::webalize($filename, "_") . ".pdf";
+
+        $dir = rtrim($dir, "/") . "/";
         file_put_contents($dir . $filename, $content);
 
         return $dir . $filename;
@@ -599,3 +620,4 @@ class PdfResponse extends Nette\Object implements Nette\Application\IResponse
     }
 
 }
+
