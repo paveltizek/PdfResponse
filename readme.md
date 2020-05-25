@@ -1,4 +1,4 @@
-PDF Response for Nette 2
+PDF Response for Nette
 ===
 
 [![Build Status](https://travis-ci.org/Joseki/PdfResponse.svg?branch=master)](https://travis-ci.org/Joseki/PdfResponse)
@@ -36,7 +36,7 @@ public function actionPdf()
     $pdf->documentTitle = date("Y-m-d") . " My super title"; // creates filename 2012-06-30-my-super-title.pdf
     $pdf->pageFormat = "A4-L"; // wide format
     $pdf->getMPDF()->setFooter("|© www.mysite.com|"); // footer
-    
+
     // do something with $pdf
     $this->sendResponse($pdf);
 }
@@ -106,7 +106,7 @@ public function actionPdf()
     $pdf->setSaveMode(PdfResponse::INLINE);
     $this->sendResponse($pdf);
 }
-```   
+```
 
 Set a pdf background easily
 ---
@@ -152,8 +152,19 @@ public function actionPdf()
 }
 ```
 
+Configuration of custom temp dir for mPDF in PdfResponse
+---
+
+```yml
+services:
+    -
+        factory: Joseki\Application\Responses\PdfResponse
+        setup:
+            - $mpdfConfig([tempDir: %tempDir%/mpdf])
+```
+
 See also
 ---
 
-- [Nette forum](http://forum.nette.org/cs/3726-addon-pdfresponse-pdfresponse) (czech)
-- [Nette Addons](http://addons.nette.org/joseki/pdf-response)
+- [Nette forum](https://forum.nette.org/cs/3726-addon-pdfresponse-pdfresponse) (czech)
+- [Componette](https://componette.com/joseki/pdfresponse/)
